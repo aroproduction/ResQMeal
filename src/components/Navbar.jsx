@@ -48,7 +48,7 @@ const Navbar = () => {
                     </div>
 
                     <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 lg:px-8 py-2 rounded-xl font-semibold transition-all duration-200 shadow-lg text-base lg:text-lg cursor-pointer hidden md:flex">
-                        <Link href="/home">Join Now</Link>
+                        <Link href="/login">Join Now</Link>
                     </Button>
                 </div>
             </div>

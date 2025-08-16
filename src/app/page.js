@@ -104,7 +104,7 @@ export default function Home() {
           <div className="absolute bottom-40 left-1/3 w-72 h-72 bg-gradient-to-br from-orange-200/60 to-pink-200/60 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-2000"></div>
         </div>
 
-        {/* Floating elements */}
+        {/* /* Floating elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-emerald-400 rounded-full animate-bounce delay-300"></div>
           <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-teal-400 rounded-full animate-bounce delay-700"></div>
@@ -114,16 +114,16 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16">
           <div className="text-center">
             <h1
-              className={`text-3xl sm:text-5xl lg:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 transition-all duration-1000 ${isLoaded ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
+              className={`font-heading text-3xl sm:text-5xl lg:text-7xl font-black text-gray-900 mb-6 sm:mb-8 transition-all duration-1000 tracking-tight leading-none ${isLoaded ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
             >
-              Rescue Food,
-              <span className="block bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 bg-clip-text text-transparent">
+              <span className="text-balance">Rescue Food,</span>
+              <span className="block bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 bg-clip-text text-transparent text-shadow">
                 Nourish Communities
               </span>
             </h1>
 
             <p
-              className={`text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-1000 delay-200 ${isLoaded ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
+              className={`font-body text-base sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-1000 delay-200 text-pretty ${isLoaded ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
             >
               Transform surplus food into hope. Connect restaurants, grocers, and food banks to create a sustainable
               food ecosystem that feeds communities and protects our planet.
@@ -132,15 +132,15 @@ export default function Home() {
             <div
               className={`flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto transition-all duration-1000 delay-400 ${isLoaded ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}
             >
-              <Link href="/home">
-                <Button className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 sm:px-10 py-4 sm:py-6 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow-lg hover:shadow-xl group cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-[220px] bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 sm:px-10 py-4 sm:py-6 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 shadow-lg hover:shadow-xl group cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 font-body tracking-wide">
                   Start Rescuing Food
                   <ArrowRight className="ml-1 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Button
                 variant="outline"
-                className="w-full sm:w-auto border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-6 sm:px-9 py-4 sm:py-5 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full sm:w-[220px] border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-6 sm:px-10 py-4 sm:py-6 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 bg-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 font-body tracking-wide"
               >
                 Learn More
               </Button>
@@ -153,8 +153,8 @@ export default function Home() {
       <section id="impact" className="py-12 sm:py-20 bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Our Global Impact</h2>
-            <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
+            <h2 className="font-heading text-4xl font-bold mb-4 tracking-tight">Our Global Impact</h2>
+            <p className="text-emerald-100 text-lg max-w-2xl mx-auto font-body leading-relaxed">
               Together, we&apos;re making a real difference in communities worldwide
             </p>
           </div>
@@ -189,10 +189,10 @@ export default function Home() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="font-heading text-4xl font-bold text-gray-900 mb-4 tracking-tight">
               Everything You Need to Make an Impact
             </h2>
-            <p className="text-gray-600 text-lg max-w-3xl mx-auto">
+            <p className="text-gray-600 text-lg max-w-3xl mx-auto font-body leading-relaxed text-pretty">
               Our comprehensive platform connects all stakeholders in the food ecosystem to reduce waste and help communities.
             </p>
           </div>
@@ -230,10 +230,10 @@ export default function Home() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="font-heading text-4xl font-bold text-gray-900 mb-4 tracking-tight">
               Voices from Our Community
             </h2>
-            <p className="text-gray-600 text-lg max-w-3xl mx-auto">
+            <p className="text-gray-600 text-lg max-w-3xl mx-auto font-body leading-relaxed text-pretty">
               Real stories from people who are making a difference with ResQMeal.
             </p>
           </div>
@@ -270,10 +270,10 @@ export default function Home() {
         }}></div>
 
         <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 text-white">
-          <h2 className="text-4xl font-bold mb-6">
+          <h2 className="font-heading text-4xl font-bold mb-6 tracking-tight">
             Ready to Make a Difference?
           </h2>
-          <p className="text-xl text-emerald-100 mb-8 leading-relaxed">
+          <p className="text-xl text-emerald-100 mb-8 leading-relaxed font-body text-balance">
             Join thousands of community members, restaurants, and organizations working together to end food waste and hunger.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 w-full sm:w-auto">
