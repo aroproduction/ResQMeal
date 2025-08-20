@@ -153,11 +153,17 @@ model Listing {
   freshness       FreshnessLevel
   allergens       Json?    // Array of allergen info
   dietaryInfo     Json?    // vegetarian, vegan, etc.
-  safeUntil       DateTime // When food expires
+  safeUntil       DateTime // When food expires (TTL)
   availableFrom   DateTime // When pickup starts
   availableUntil  DateTime // When pickup ends
   pickupInstructions String?
   photos          Json?    // Array of photo URLs
+  
+  // TTL and waste tracking
+  claimedQuantity Float    @default(0) // Total quantity claimed
+  wastedQuantity  Float?   // Calculated when expired
+  isExpired       Boolean  @default(false) // TTL flag
+  expiredAt       DateTime? // When it was marked as expired
   
   // Location and provider info
   providerId      String

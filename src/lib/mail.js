@@ -1,14 +1,40 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create transporter using Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_FROM_EMAIL,
+    pass: process.env.GOOGLE_MAIL_PASS
+  }
+});
 
+// Verify transporter configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('Mail transporter configuration error:', error);
+  } else {
+    console.log('Mail server is ready to take our messages');
+  }
+});
+
+const footer = "<br /><br /><br /><p>The mail is from ResQMeal</p>";
+
+// Send email function
 export const sendEmail = async (to, subject, html) => {
-  const systemNotice = `<br /><br /><p><em>This is a system generated mail. Please do not reply.</em></p>`;
-  const finalHtml = `${html}${systemNotice}`;
-  await resend.emails.send({
-    from: "resqmeal@resend.dev",
-    to,
-    subject,
-    html: finalHtml,
-  });
-}
+  try {
+    const mailOptions = {
+      from: process.env.GMAIL_FROM_EMAIL,
+      to: to,
+      subject: "ResQMeal --- " + subject,
+      html: html + footer
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Failed to send email');
+  }
+};
