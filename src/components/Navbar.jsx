@@ -40,7 +40,7 @@ const Navbar = () => {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex space-x-4 lg:space-x-8 items-center">
-                        <Link href="/home" className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-base lg:text-lg">Home</Link>
+                        <Link href="/" className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-base lg:text-lg">Home</Link>
                         <Link href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-base lg:text-lg">Features</Link>
                         <Link href="#impact" className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-base lg:text-lg">Impact</Link>
                         <Link href="#testimonials" className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-base lg:text-lg">Reviews</Link>

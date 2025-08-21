@@ -7,91 +7,312 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core User table with role directly included
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  password  String   // Hashed
-  phone     String?
-  role      UserRole @default(RECEIVER) // Direct role storage
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relationships
-  profile       UserProfile?
-  ngoDetails    NGODetails?
+  id              String            @id @default(uuid())
+  email           String            @unique
+  name            String
+  password        String
+  phone           String?
+  role            UserRole          @default(RECEIVER)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  claims          Claim[]
+  listings        Listing[]
+  ngoDetails      NGODetails?
+  notifications   NotificationLog[]
   providerDetails ProviderDetails?
-  listings      Listing[]
-  claims        Claim[]
-  notifications NotificationLog[]
-  analytics     UserAnalytics?
-  subscriptions Subscription[]
-  
+  subscriptions   Subscription[]
+  analytics       UserAnalytics?
+  profile         UserProfile?
+
   @@map("users")
 }
 
-enum UserRole {
-  PROVIDER      // Food providers (canteens, hostels, individuals)
-  RECEIVER      // Individual food receivers
-  NGO          // NGO representatives who distribute to needy
-  ADMIN        // System administrators
-  CANTEEN_MANAGER // Special provider role for canteen staff
-}
-
-// Extended user information
 model UserProfile {
-  id               String    @id @default(uuid())
-  userId           String    @unique
-  avatar           String?
-  bio              String?
-  campusId         String?   // Link to campus
-  department       String?
-  studentId        String?   // For students
-  employeeId       String?   // For staff
-  preferences      Json?     // Food preferences, dietary restrictions
-  sustainabilityScore Float? @default(0) // Gamification element
-  
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  campus Campus? @relation(fields: [campusId], references: [id])
-  
+  id                  String  @id @default(uuid())
+  userId              String  @unique
+  avatar              String?
+  bio                 String?
+  campusId            String?
+  department          String?
+  studentId           String?
+  employeeId          String?
+  preferences         Json?
+  sustainabilityScore Float?  @default(0)
+  campus              Campus? @relation(fields: [campusId], references: [id])
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_profiles")
 }
 
-// NGO details - only created when user role is NGO
 model NGODetails {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  ngoName         String
-  registrationNo  String?  // Official NGO registration
-  website         String?
-  description     String?
-  servingAreas    Json?    // Array of locations they serve
-  capacity        Int?     // How many people they can serve daily
+  id                 String                @id @default(uuid())
+  userId             String                @unique
+  ngoName            String
+  registrationNo     String?
+  website            String?
+  description        String?
+  servingAreas       Json?
+  capacity           Int?
   verificationStatus NGOVerificationStatus @default(PENDING)
-  verifiedAt      DateTime?
-  verifiedBy      String?  // Admin user ID who verified
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  verifiedAt         DateTime?
+  verifiedBy         String?
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("ngo_details")
 }
 
-// Provider details - only created when user role is PROVIDER or CANTEEN_MANAGER
 model ProviderDetails {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  businessName    String?  // Canteen name, business name
-  licenseNo       String?  // Food handling license
-  operatingHours  Json?    // Daily operating schedule
-  specialization  Json?    // Types of food they usually provide
-  capacity        Int?     // Max quantity they can handle daily
-  locationId      String?  // Default location for their listings
-  
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location Location? @relation(fields: [locationId], references: [id])
-  
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  businessName   String?
+  licenseNo      String?
+  operatingHours Json?
+  specialization Json?
+  capacity       Int?
+  locationId     String?
+  location       Location? @relation(fields: [locationId], references: [id])
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("provider_details")
+}
+
+model Campus {
+  id           String        @id @default(uuid())
+  name         String
+  address      Json
+  coordinates  Json?
+  timezone     String        @default("UTC")
+  settings     Json?
+  events       Event[]
+  locations    Location[]
+  userProfiles UserProfile[]
+
+  @@map("campuses")
+}
+
+model Location {
+  id              String            @id @default(uuid())
+  campusId        String
+  name            String
+  type            LocationType
+  coordinates     Json?
+  contactInfo     Json?
+  operatingHours  Json?
+  events          Event[]
+  listings        Listing[]
+  campus          Campus            @relation(fields: [campusId], references: [id])
+  providerDetails ProviderDetails[]
+
+  @@map("locations")
+}
+
+model Listing {
+  id                 String            @id @default(uuid())
+  title              String
+  description        String?
+  foodItems          Json
+  totalQuantity      Float
+  unit               String
+  freshness          FreshnessLevel
+  allergens          Json?
+  dietaryInfo        Json?
+  safeUntil          DateTime
+  availableFrom      DateTime
+  availableUntil     DateTime
+  pickupInstructions String?
+  photos             Json?
+  claimedQuantity    Float             @default(0)
+  wastedQuantity     Float?
+  isExpired          Boolean           @default(false)
+  expiredAt          DateTime?
+  providerId         String
+  locationId         String
+  status             ListingStatus     @default(AVAILABLE)
+  priority           Priority          @default(MEDIUM)
+  isRecurring        Boolean           @default(false)
+  recurringPattern   Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  eventId            String?
+  claims             Claim[]
+  analytics          ListingAnalytics?
+  event              Event?            @relation(fields: [eventId], references: [id])
+  location           Location          @relation(fields: [locationId], references: [id])
+  provider           User              @relation(fields: [providerId], references: [id])
+
+  @@map("listings")
+}
+
+model Claim {
+  id                String         @id @default(uuid())
+  listingId         String
+  receiverId        String
+  requestedQuantity Float
+  approvedQuantity  Float?
+  pickupCode        String?
+  pickupTime        DateTime?
+  actualPickupTime  DateTime?
+  notes             String?
+  status            ClaimStatus    @default(PENDING)
+  cancelReason      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  feedback          ClaimFeedback?
+  listing           Listing        @relation(fields: [listingId], references: [id])
+  receiver          User           @relation(fields: [receiverId], references: [id])
+
+  @@map("claims")
+}
+
+model ClaimFeedback {
+  id          String  @id @default(uuid())
+  claimId     String  @unique
+  rating      Int
+  comment     String?
+  foodQuality Int?
+  experience  Int?
+  claim       Claim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@map("claim_feedback")
+}
+
+model Event {
+  id                String    @id @default(uuid())
+  title             String
+  description       String?
+  startTime         DateTime
+  endTime           DateTime
+  campusId          String
+  locationId        String?
+  organizerEmail    String
+  expectedAttendees Int?
+  foodOrdered       Json?
+  autoPromptEnabled Boolean   @default(true)
+  promptSentAt      DateTime?
+  campus            Campus    @relation(fields: [campusId], references: [id])
+  location          Location? @relation(fields: [locationId], references: [id])
+  listings          Listing[]
+
+  @@map("events")
+}
+
+model NotificationLog {
+  id          String              @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?
+  channel     NotificationChannel
+  sentAt      DateTime            @default(now())
+  readAt      DateTime?
+  actionTaken String?
+  user        User                @relation(fields: [userId], references: [id])
+
+  @@map("notification_logs")
+}
+
+model NotificationPreference {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  enableEmail     Boolean @default(true)
+  enablePush      Boolean @default(true)
+  enableSMS       Boolean @default(false)
+  newListings     Boolean @default(true)
+  claimUpdates    Boolean @default(true)
+  pickupReminders Boolean @default(true)
+  weeklyDigest    Boolean @default(true)
+  achievements    Boolean @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  timezone        String  @default("UTC")
+
+  @@map("notification_preferences")
+}
+
+model ListingAnalytics {
+  id               String  @id @default(uuid())
+  listingId        String  @unique
+  viewCount        Int     @default(0)
+  claimCount       Int     @default(0)
+  shareCount       Int     @default(0)
+  carbonSaved      Float   @default(0)
+  waterSaved       Float   @default(0)
+  peopleServed     Int     @default(0)
+  timeToFirstClaim Int?
+  timeToFullClaim  Int?
+  listing          Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("listing_analytics")
+}
+
+model UserAnalytics {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  listingsCreated      Int      @default(0)
+  foodShared           Float    @default(0)
+  carbonFootprintSaved Float    @default(0)
+  waterFootprintSaved  Float    @default(0)
+  claimsMade           Int      @default(0)
+  foodReceived         Float    @default(0)
+  moneySaved           Float    @default(0)
+  streak               Int      @default(0)
+  longestStreak        Int      @default(0)
+  badges               Json?
+  level                Int      @default(1)
+  points               Int      @default(0)
+  lastUpdated          DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_analytics")
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String
+  planId    String
+  status    SubscriptionStatus
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+  autoRenew Boolean            @default(false)
+  plan      SubscriptionPlan   @relation(fields: [planId], references: [id])
+  user      User               @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  price         Float
+  currency      String         @default("USD")
+  interval      String
+  features      Json
+  maxListings   Int?
+  maxClaims     Int?
+  priority      Boolean        @default(false)
+  analytics     Boolean        @default(false)
+  customization Boolean        @default(false)
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model SystemConfig {
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
+
+  @@map("system_config")
+}
+
+enum UserRole {
+  PROVIDER
+  RECEIVER
+  NGO
+  ADMIN
+  CANTEEN_MANAGER
 }
 
 enum NGOVerificationStatus {
@@ -100,93 +321,12 @@ enum NGOVerificationStatus {
   REJECTED
 }
 
-// Campus/Institution management
-model Campus {
-  id          String @id @default(uuid())
-  name        String
-  address     Json   // Structured address
-  coordinates Json?  // { lat, lng }
-  timezone    String @default("UTC")
-  settings    Json?  // Campus-specific settings
-  
-  locations    Location[]
-  events       Event[]
-  userProfiles UserProfile[]
-  
-  @@map("campuses")
-}
-
-// Specific locations within campus
-model Location {
-  id          String @id @default(uuid())
-  campusId    String
-  name        String // "Main Canteen", "Hostel A Kitchen", etc.
-  type        LocationType
-  coordinates Json?  // { lat, lng }
-  contactInfo Json?  // Phone, email, etc.
-  operatingHours Json? // Daily schedule
-  
-  campus          Campus           @relation(fields: [campusId], references: [id])
-  listings        Listing[]
-  events          Event[]
-  providerDetails ProviderDetails[] // Providers can have default locations
-  
-  @@map("locations")
-}
-
 enum LocationType {
   CANTEEN
   HOSTEL
   EVENT_VENUE
   OFFICE
   OTHER
-}
-
-// Enhanced Listing model
-model Listing {
-  id              String   @id @default(uuid())
-  title           String   // "Leftover Rice from Lunch", "Event Snacks"
-  description     String?
-  foodItems       Json     // Array of {name, quantity, unit, freshness}
-  totalQuantity   Float
-  unit            String   // kg, pieces, servings
-  freshness       FreshnessLevel
-  allergens       Json?    // Array of allergen info
-  dietaryInfo     Json?    // vegetarian, vegan, etc.
-  safeUntil       DateTime // When food expires (TTL)
-  availableFrom   DateTime // When pickup starts
-  availableUntil  DateTime // When pickup ends
-  pickupInstructions String?
-  photos          Json?    // Array of photo URLs
-  
-  // TTL and waste tracking
-  claimedQuantity Float    @default(0) // Total quantity claimed
-  wastedQuantity  Float?   // Calculated when expired
-  isExpired       Boolean  @default(false) // TTL flag
-  expiredAt       DateTime? // When it was marked as expired
-  
-  // Location and provider info
-  providerId      String
-  locationId      String
-  
-  // Status and metadata
-  status          ListingStatus @default(AVAILABLE)
-  priority        Priority @default(MEDIUM)
-  isRecurring     Boolean @default(false) // For regular surplus patterns
-  recurringPattern Json?   // Cron-like pattern for recurring listings
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relationships
-  provider     User      @relation(fields: [providerId], references: [id])
-  location     Location  @relation(fields: [locationId], references: [id])
-  claims       Claim[]
-  event        Event?    @relation(fields: [eventId], references: [id])
-  eventId      String?
-  analytics    ListingAnalytics?
-  
-  @@map("listings")
 }
 
 enum FreshnessLevel {
@@ -214,99 +354,14 @@ enum ListingStatus {
   CANCELLED
 }
 
-// Enhanced Claims model
-model Claim {
-  id             String    @id @default(uuid())
-  listingId      String
-  receiverId     String
-  
-  // Claim details
-  requestedQuantity Float
-  approvedQuantity  Float?
-  pickupCode       String?   // QR code or OTP
-  pickupTime       DateTime?
-  actualPickupTime DateTime?
-  notes            String?
-  
-  // Status tracking
-  status         ClaimStatus @default(PENDING)
-  cancelReason   String?
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  // Relationships
-  listing  Listing @relation(fields: [listingId], references: [id])
-  receiver User    @relation(fields: [receiverId], references: [id])
-  feedback ClaimFeedback?
-  
-  @@map("claims")
-}
-
 enum ClaimStatus {
   PENDING
   APPROVED
   REJECTED
-  CONFIRMED    // Receiver confirmed pickup
-  COMPLETED    // Successfully picked up
-  NO_SHOW      // Receiver didn't show up
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
   CANCELLED
-}
-
-// Feedback system for claims
-model ClaimFeedback {
-  id         String @id @default(uuid())
-  claimId    String @unique
-  rating     Int    // 1-5
-  comment    String?
-  foodQuality Int?  // 1-5
-  experience Int?   // 1-5
-  
-  claim Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  
-  @@map("claim_feedback")
-}
-
-// Events and calendar integration
-model Event {
-  id              String    @id @default(uuid())
-  title           String
-  description     String?
-  startTime       DateTime
-  endTime         DateTime
-  campusId        String
-  locationId      String?
-  organizerEmail  String
-  expectedAttendees Int?
-  foodOrdered     Json?     // What food was ordered
-  
-  // Auto-prompt settings
-  autoPromptEnabled Boolean @default(true)
-  promptSentAt      DateTime?
-  
-  campus   Campus    @relation(fields: [campusId], references: [id])
-  location Location? @relation(fields: [locationId], references: [id])
-  listings Listing[]
-  
-  @@map("events")
-}
-
-// Notification system (storing for analytics and audit)
-model NotificationLog {
-  id         String @id @default(uuid())
-  userId     String
-  type       NotificationType
-  title      String
-  message    String
-  data       Json?  // Additional payload
-  channel    NotificationChannel
-  sentAt     DateTime @default(now())
-  readAt     DateTime?
-  actionTaken String? // What action user took after notification
-  
-  user User @relation(fields: [userId], references: [id])
-  
-  @@map("notification_logs")
 }
 
 enum NotificationType {
@@ -326,131 +381,9 @@ enum NotificationChannel {
   PUSH
 }
 
-// User preferences for notifications
-model NotificationPreference {
-  id     String @id @default(uuid())
-  userId String @unique
-  
-  // Preference settings
-  enableEmail    Boolean @default(true)
-  enablePush     Boolean @default(true)
-  enableSMS      Boolean @default(false)
-  
-  // Notification types
-  newListings    Boolean @default(true)
-  claimUpdates   Boolean @default(true)
-  pickupReminders Boolean @default(true)
-  weeklyDigest   Boolean @default(true)
-  achievements   Boolean @default(true)
-  
-  // Timing preferences
-  quietHoursStart String? // "22:00"
-  quietHoursEnd   String? // "08:00"
-  timezone        String  @default("UTC")
-  
-  @@map("notification_preferences")
-}
-
-// Analytics for listings
-model ListingAnalytics {
-  id        String @id @default(uuid())
-  listingId String @unique
-  
-  // Engagement metrics
-  viewCount     Int @default(0)
-  claimCount    Int @default(0)
-  shareCount    Int @default(0)
-  
-  // Environmental impact
-  carbonSaved   Float @default(0) // kg CO2
-  waterSaved    Float @default(0) // liters
-  peopleServed  Int   @default(0)
-  
-  // Performance metrics
-  timeToFirstClaim Int? // minutes
-  timeToFullClaim  Int? // minutes
-  
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  
-  @@map("listing_analytics")
-}
-
-// User analytics and gamification
-model UserAnalytics {
-  id     String @id @default(uuid())
-  userId String @unique
-  
-  // Provider stats
-  listingsCreated    Int   @default(0)
-  foodShared         Float @default(0) // kg
-  carbonFootprintSaved Float @default(0)
-  waterFootprintSaved  Float @default(0)
-  
-  // Receiver stats
-  claimsMade         Int   @default(0)
-  foodReceived       Float @default(0) // kg
-  moneySaved         Float @default(0) // estimated
-  
-  // Engagement
-  streak             Int   @default(0) // days
-  longestStreak      Int   @default(0)
-  badges             Json? // Array of earned badges
-  level              Int   @default(1)
-  points             Int   @default(0)
-  
-  lastUpdated        DateTime @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("user_analytics")
-}
-
-// Business model - Freemium subscriptions
-model Subscription {
-  id          String @id @default(uuid())
-  userId      String
-  planId      String
-  status      SubscriptionStatus
-  startDate   DateTime @default(now())
-  endDate     DateTime?
-  autoRenew   Boolean @default(false)
-  
-  user User           @relation(fields: [userId], references: [id])
-  plan SubscriptionPlan @relation(fields: [planId], references: [id])
-  
-  @@map("subscriptions")
-}
-
-model SubscriptionPlan {
-  id          String @id @default(uuid())
-  name        String @unique // FREE, PREMIUM, NGO_PLUS, ENTERPRISE
-  price       Float
-  currency    String @default("USD")
-  interval    String // monthly, yearly
-  features    Json   // Array of features
-  maxListings Int?   // null for unlimited
-  maxClaims   Int?   // null for unlimited
-  priority    Boolean @default(false) // Priority notifications
-  analytics   Boolean @default(false) // Advanced analytics
-  customization Boolean @default(false) // Custom branding
-  
-  subscriptions Subscription[]
-  
-  @@map("subscription_plans")
-}
-
 enum SubscriptionStatus {
   ACTIVE
   CANCELLED
   EXPIRED
   PAST_DUE
-}
-
-// System configuration
-model SystemConfig {
-  id    String @id @default(uuid())
-  key   String @unique
-  value Json
-  
-  @@map("system_config")
 }
