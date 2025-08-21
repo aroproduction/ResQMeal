@@ -6,7 +6,7 @@ import {
     MapPin,
     Clock,
     Bell,
-    Heart,
+    Leaf,
     X,
     LogOut,
     Menu,
@@ -36,7 +36,7 @@ const ReceiverDashboard = () => {
     ]);
 
     const menuItems = [
-        { id: "dashboard", label: "Dashboard", icon: Heart },
+        { id: "dashboard", label: "Dashboard", icon: Leaf },
         { id: "browse", label: "Browse Food", icon: Search },
         { id: "requests", label: "My Requests", icon: Clock },
         { id: "map", label: "Map View", icon: MapPin },
@@ -91,7 +91,7 @@ const ReceiverDashboard = () => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Heart className="w-6 h-6 text-white" />
+                            <Leaf className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                         </div>
                         <div>
                             <h1 className="font-heading text-lg font-bold text-gray-900">ResQMeal</h1>
@@ -117,7 +117,7 @@ const ReceiverDashboard = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                                        <Heart className="w-6 h-6 text-white" />
+                                        <Leaf className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <h1 className="font-heading text-lg font-bold text-gray-900">ResQMeal</h1>
@@ -174,7 +174,7 @@ const ReceiverDashboard = () => {
                     <div className="p-6 border-b border-gray-200">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                                <Heart className="w-7 h-7 text-white" />
+                                <Leaf className="w-7 h-7 text-white" />
                             </div>
                             <div>
                                 <h1 className="font-heading text-xl font-bold text-gray-900">ResQMeal</h1>
