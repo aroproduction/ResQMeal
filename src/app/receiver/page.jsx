@@ -1,6 +1,8 @@
 "use client"
 
 import React, { useState } from "react";
+import { signOut } from "next-auth/react";
+
 import {
     Search,
     MapPin,
@@ -43,6 +45,17 @@ const ReceiverDashboard = () => {
         { id: "notifications", label: "Notifications", icon: Bell },
         { id: "profile", label: "Profile", icon: User },
     ];
+
+        const handleLogout = async () => {
+            try {
+                await signOut({
+                    callbackUrl: "/login",
+                    redirect: true
+                });
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        };
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -211,12 +224,16 @@ const ReceiverDashboard = () => {
                     </nav>
 
                     {/* Logout Button */}
-                    <div className="p-6 border-t border-gray-200">
-                        <Button variant="outline" className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body py-2.5 text-sm">
-                            <LogOut className="w-4 h-4 mr-2" />
-                            Logout
-                        </Button>
-                    </div>
+                    <div className="p-4 border-t border-gray-200">
+                                                <Button 
+                                                    variant="outline" 
+                                                    className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body text-sm"
+                                                    onClick={handleLogout}
+                                                >
+                                                    <LogOut className="w-4 h-4 mr-2" />
+                                                    Logout
+                                                </Button>
+                                            </div>
                 </aside>
 
                 {/* Main Content */}
