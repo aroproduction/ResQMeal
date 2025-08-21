@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react";
+import { signOut } from "next-auth/react";
 import {
     LayoutDashboard,
     Plus,
@@ -54,6 +55,17 @@ const ProviderDashboard = () => {
 
     const dismissNotification = (id) => {
         setNotifications(notifications.filter(n => n.id !== id));
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut({
+                callbackUrl: "/login",
+                redirect: true
+            });
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
     };
 
     const renderContent = () => {
@@ -146,7 +158,11 @@ const ProviderDashboard = () => {
                         </nav>
 
                         <div className="p-4 border-t border-gray-200">
-                            <Button variant="outline" className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body text-sm">
+                            <Button 
+                                variant="outline" 
+                                className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body text-sm"
+                                onClick={handleLogout}
+                            >
                                 <LogOut className="w-4 h-4 mr-2" />
                                 Logout
                             </Button>
@@ -219,7 +235,11 @@ const ProviderDashboard = () => {
 
                     {/* Logout Button */}
                     <div className="p-6 border-t border-gray-200">
-                        <Button variant="outline" className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body py-2.5 text-sm">
+                        <Button 
+                            variant="outline" 
+                            className="w-full justify-start text-gray-600 hover:text-red-600 hover:border-red-300 hover:bg-red-50 font-body py-2.5 text-sm"
+                            onClick={handleLogout}
+                        >
                             <LogOut className="w-4 h-4 mr-2" />
                             Logout
                         </Button>

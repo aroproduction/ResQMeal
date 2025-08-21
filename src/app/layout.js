@@ -25,7 +25,11 @@ const mono = JetBrains_Mono({
 export const metadata = {
   title: "🌿 ResQMeal",
   description: "Created to redistribute food surplus",
-  generator: "v0.app",
+  // icons: {
+  //   icon: '/your-custom-icon.ico',
+  //   shortcut: '/your-custom-icon.ico',
+  //   apple: '/your-custom-icon.png',
+  // },
 }
 
 export default function RootLayout({ children }) {
