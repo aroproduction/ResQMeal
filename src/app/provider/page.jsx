@@ -7,7 +7,7 @@ import {
     Plus,
     ClipboardList,
     Bell,
-    Utensils,
+    Leaf,
     X,
     LogOut,
     Menu,
@@ -90,7 +90,7 @@ const ProviderDashboard = () => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Utensils className="w-6 h-6 text-white" />
+                            <Leaf className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h1 className="font-heading text-lg font-bold text-gray-900">ResQMeal</h1>
@@ -116,7 +116,7 @@ const ProviderDashboard = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                                        <Utensils className="w-6 h-6 text-white" />
+                                        <Leaf className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
                                         <h1 className="font-heading text-lg font-bold text-gray-900">ResQMeal</h1>
@@ -178,7 +178,7 @@ const ProviderDashboard = () => {
                     <div className="p-6 border-b border-gray-200">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                                <Utensils className="w-7 h-7 text-white" />
+                                <Leaf className="w-7 h-7 text-white" />
                             </div>
                             <div>
                                 <h1 className="font-heading text-xl font-bold text-gray-900">ResQMeal</h1>
