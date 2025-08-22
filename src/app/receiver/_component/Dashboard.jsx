@@ -36,95 +36,106 @@ const Dashboard = ({ setActiveSection, getStatusBadge }) => {
     const [myRequests, setMyRequests] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
 
-    // Mock data for demonstration
-    useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            setMetrics({
-                totalRequests: 12,
-                mealsReceived: 48,
-                nearbyDonations: 8,
-                rating: 4.5,
-                organizationName: "Community Kitchen"
-            });
+    // Fetch dashboard data from API
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
 
-            setAvailableListings([
-                {
-                    id: 1,
-                    title: "Fresh Vegetables & Fruits",
-                    provider: "Green Grocery Store",
-                    distance: "0.5 km",
-                    freshness: "FRESH",
-                    quantity: "5 kg",
-                    expiresIn: "2 hours",
-                    status: "available",
-                    location: "Downtown Market",
-                    phone: "+1234567890"
-                },
-                {
-                    id: 2,
-                    title: "Cooked Meals - Lunch",
-                    provider: "University Canteen",
-                    distance: "1.2 km",
-                    freshness: "FRESHLY_COOKED",
-                    quantity: "20 portions",
-                    expiresIn: "4 hours",
-                    status: "available",
-                    location: "Campus Area",
-                    phone: "+1234567891"
-                },
-                {
-                    id: 3,
-                    title: "Bakery Items",
-                    provider: "Local Bakery",
-                    distance: "0.8 km",
-                    freshness: "GOOD",
-                    quantity: "15 items",
-                    expiresIn: "6 hours",
-                    status: "urgent",
-                    location: "Main Street",
-                    phone: "+1234567892"
-                }
-            ]);
+            // Fetch dashboard metrics
+            const metricsResponse = await fetch('/api/receiver/dashboard/metrics');
+            if (metricsResponse.ok) {
+                const metricsData = await metricsResponse.json();
+                setMetrics(metricsData.data);
+            }
 
-            setMyRequests([
-                {
-                    id: 1,
-                    listingTitle: "Fresh Bread",
-                    provider: "Artisan Bakery",
-                    requestedAt: "2 hours ago",
-                    status: "confirmed",
-                    pickupTime: "Today 4:00 PM",
-                    otp: "1234"
-                },
-                {
-                    id: 2,
-                    listingTitle: "Surplus Vegetables",
-                    provider: "Farm Market",
-                    requestedAt: "1 day ago",
-                    status: "requested",
-                    pickupTime: "Pending confirmation",
-                    otp: null
-                }
-            ]);
+            // Fetch recent available listings
+            const listingsResponse = await fetch('/api/receiver/dashboard/recent-listings?limit=3');
+            if (listingsResponse.ok) {
+                const listingsData = await listingsResponse.json();
+                const formattedListings = listingsData.data.map(listing => ({
+                    id: listing.id,
+                    title: listing.title,
+                    provider: listing.provider.displayName,
+                    distance: "Calculating...", // You can calculate distance based on coordinates
+                    freshness: listing.freshness,
+                    quantity: `${listing.remainingQuantity} ${listing.unit}`,
+                    expiresIn: `${listing.timeRemaining} hours`,
+                    status: listing.priority === 'URGENT' ? 'urgent' : 'available',
+                    location: listing.location.name,
+                    phone: listing.provider.phone
+                }));
+                setAvailableListings(formattedListings);
+            }
 
+            // Fetch active claims
+            const claimsResponse = await fetch('/api/receiver/dashboard/active-claims?limit=3');
+            if (claimsResponse.ok) {
+                const claimsData = await claimsResponse.json();
+                const formattedRequests = claimsData.data.map(claim => ({
+                    id: claim.id,
+                    listingTitle: claim.listing.title,
+                    provider: claim.listing.provider.displayName,
+                    requestedAt: claim.timeAgo,
+                    status: claim.status.toLowerCase(),
+                    pickupTime: claim.pickupTime ? new Date(claim.pickupTime).toLocaleString() : 'Pending',
+                    otp: claim.pickupCode || 'Pending'
+                }));
+                setMyRequests(formattedRequests);
+            }
+
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            toast.error('Failed to load dashboard data');
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
+    };
+
+    useEffect(() => {
+        fetchDashboardData();
     }, []);
 
     const refreshDashboard = async () => {
         setRefreshing(true);
-        // Simulate refresh
-        setTimeout(() => {
-            setRefreshing(false);
+        try {
+            await fetchDashboardData();
             toast.success('Dashboard refreshed');
-        }, 1000);
+        } catch (error) {
+            toast.error('Failed to refresh dashboard');
+        } finally {
+            setRefreshing(false);
+        }
     };
 
-    const handleRequestFood = (listingId) => {
-        toast.success('Food request sent successfully!');
-        // Update the listing status or redirect to requests page
-        setActiveSection("requests");
+    const handleRequestFood = async (listingId) => {
+        try {
+            // For dashboard quick request, we'll use a default quantity of 1
+            // In a real app, you might want to open a modal to get the quantity
+            const response = await fetch(`/api/receiver/listings/${listingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestedQuantity: 1,
+                    notes: 'Quick request from dashboard'
+                })
+            });
+
+            if (response.ok) {
+                toast.success('Food request sent successfully!');
+                // Refresh dashboard data to update counts
+                await fetchDashboardData();
+                // Optionally redirect to requests page
+                setActiveSection("requests");
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Failed to send request');
+            }
+        } catch (error) {
+            console.error('Error requesting food:', error);
+            toast.error('Failed to send request');
+        }
     };
 
     const getFreshnessColor = (freshness) => {

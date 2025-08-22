@@ -31,132 +31,38 @@ const Notifications = () => {
     const [selectedNotification, setSelectedNotification] = useState(null);
     const [showActionMenu, setShowActionMenu] = useState(null);
 
-    // Extended mock notifications for receiver
-    useEffect(() => {
-        const mockNotifications = [
-            {
-                id: 1,
-                type: "new_listing",
-                title: "New Food Listing Available",
-                message: "Fresh vegetables available 0.5km away from Green Grocery Store",
-                time: "2024-08-21T10:00:00Z",
-                unread: true,
-                priority: "high",
-                actionRequired: true,
-                details: {
-                    provider: "Green Grocery Store",
-                    distance: "0.5 km",
-                    expiresIn: "2 hours",
-                    quantity: "5 kg"
-                }
-            },
-            {
-                id: 2,
-                type: "request_accepted",
-                title: "Request Accepted",
-                message: "Your request for vegetables was accepted by Farm Market",
-                time: "2024-08-21T09:00:00Z",
-                unread: true,
-                priority: "high",
-                actionRequired: true,
-                details: {
-                    provider: "Farm Market",
-                    otp: "1234",
-                    pickupTime: "Today 4:00 PM",
-                    pickupLocation: "Downtown Market, Stall 12"
-                }
-            },
-            {
-                id: 3,
-                type: "pickup_reminder",
-                title: "Pickup Reminder",
-                message: "Pickup reminder: Fresh bread expires in 2 hours",
-                time: "2024-08-21T07:00:00Z",
-                unread: false,
-                priority: "medium",
-                actionRequired: true,
-                details: {
-                    provider: "Artisan Bakery",
-                    otp: "5678",
-                    expiresIn: "2 hours",
-                    pickupLocation: "Main Street, Shop 45"
-                }
-            },
-            {
-                id: 4,
-                type: "request_cancelled",
-                title: "Request Cancelled",
-                message: "Provider cancelled your dairy products request due to quality concerns",
-                time: "2024-08-21T04:00:00Z",
-                unread: false,
-                priority: "medium",
-                actionRequired: false,
-                details: {
-                    provider: "City Dairy Farm",
-                    reason: "Quality concerns",
-                    requestedQuantity: "2 kg"
-                }
-            },
-            {
-                id: 5,
-                type: "rating_request",
-                title: "Rate Your Experience",
-                message: "Please rate your experience with University Canteen",
-                time: "2024-08-20T22:00:00Z",
-                unread: false,
-                priority: "low",
-                actionRequired: true,
-                details: {
-                    provider: "University Canteen",
-                    orderCompleted: "Yesterday 2:00 PM"
-                }
-            },
-            {
-                id: 6,
-                type: "new_listing",
-                title: "Urgent Food Available",
-                message: "Restaurant surplus food available - expires soon!",
-                time: "2024-08-20T10:00:00Z",
-                unread: false,
-                priority: "high",
-                actionRequired: true,
-                details: {
-                    provider: "Downtown Restaurant",
-                    distance: "1.5 km",
-                    expiresIn: "1 hour",
-                    quantity: "30 portions"
-                }
-            },
-            {
-                id: 7,
-                type: "system",
-                title: "Profile Update",
-                message: "Your dietary preferences have been updated successfully",
-                time: "2024-08-19T10:00:00Z",
-                unread: false,
-                priority: "low",
-                actionRequired: false,
-                details: {}
-            },
-            {
-                id: 8,
-                type: "weekly_summary",
-                title: "Weekly Summary",
-                message: "You received 12 meals this week and helped reduce 8kg of food waste!",
-                time: "2024-08-18T10:00:00Z",
-                unread: false,
-                priority: "low",
-                actionRequired: false,
-                details: {
-                    mealsReceived: 12,
-                    wasteReduced: "8kg",
-                    impactPoints: 240
-                }
+    // Fetch notifications from API
+    const fetchNotifications = async () => {
+        try {
+            const response = await fetch('/api/receiver/notifications');
+            if (response.ok) {
+                const data = await response.json();
+                const formattedNotifications = data.data.map(notification => ({
+                    id: notification.id,
+                    type: notification.type.toLowerCase().replace('_', '_'),
+                    title: notification.title,
+                    message: notification.message,
+                    time: notification.sentAt,
+                    unread: !notification.readAt,
+                    priority: "medium", // Default priority, could be added to database
+                    actionRequired: notification.type === 'CLAIM_UPDATE' || notification.type === 'PICKUP_REMINDER',
+                    details: notification.data || {}
+                }));
+                
+                setNotifications(formattedNotifications);
+                setFilteredNotifications(formattedNotifications);
+            } else {
+                console.error('Failed to fetch notifications');
+                toast.error('Failed to load notifications');
             }
-        ];
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+            toast.error('Failed to load notifications');
+        }
+    };
 
-        setNotifications(mockNotifications);
-        setFilteredNotifications(mockNotifications);
+    useEffect(() => {
+        fetchNotifications();
     }, []);
 
     // Filter notifications
@@ -175,6 +81,50 @@ const Notifications = () => {
 
         setFilteredNotifications(filtered);
     }, [notifications, selectedType]);
+
+    // Mark notifications as read
+    const markAsRead = async (notificationIds) => {
+        try {
+            const response = await fetch('/api/receiver/notifications', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notificationIds: Array.isArray(notificationIds) ? notificationIds : [notificationIds]
+                })
+            });
+
+            if (response.ok) {
+                await fetchNotifications(); // Refresh notifications
+            }
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+        }
+    };
+
+    // Mark all as read
+    const markAllAsRead = async () => {
+        try {
+            const response = await fetch('/api/receiver/notifications', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    markAllAsRead: true
+                })
+            });
+
+            if (response.ok) {
+                toast.success('All notifications marked as read');
+                await fetchNotifications(); // Refresh notifications
+            }
+        } catch (error) {
+            console.error('Error marking all notifications as read:', error);
+            toast.error('Failed to mark notifications as read');
+        }
+    };
 
     const getTypeIcon = (type) => {
         switch (type) {
@@ -235,14 +185,9 @@ const Notifications = () => {
         }
     };
 
-    const markAsRead = (id) => {
-        setNotifications(notifications.map(n => 
-            n.id === id ? { ...n, unread: false } : n
-        ));
-        toast.success('Notification marked as read');
-    };
-
     const markAsUnread = (id) => {
+        // This would require an API endpoint to mark as unread
+        // For now, just update locally
         setNotifications(notifications.map(n => 
             n.id === id ? { ...n, unread: true } : n
         ));
@@ -250,16 +195,15 @@ const Notifications = () => {
     };
 
     const deleteNotification = (id) => {
+        // This would require an API endpoint to delete notifications
+        // For now, just update locally
         setNotifications(notifications.filter(n => n.id !== id));
         toast.success('Notification deleted');
     };
 
-    const markAllAsRead = () => {
-        setNotifications(notifications.map(n => ({ ...n, unread: false })));
-        toast.success('All notifications marked as read');
-    };
-
     const clearAllNotifications = () => {
+        // This would require an API endpoint to clear all notifications
+        // For now, just update locally
         setNotifications([]);
         toast.success('All notifications cleared');
     };

@@ -38,133 +38,63 @@ const BrowseListings = ({ getStatusBadge }) => {
     });
     const [showFilters, setShowFilters] = useState(false);
     const [sortBy, setSortBy] = useState("distance");
+    const [selectedListing, setSelectedListing] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-    // Mock data
-    useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            const mockListings = [
-                {
-                    id: 1,
-                    title: "Fresh Vegetables & Fruits",
-                    description: "Assorted fresh vegetables including tomatoes, carrots, leafy greens, and seasonal fruits",
-                    provider: "Green Grocery Store",
-                    providerRating: 4.8,
-                    distance: 0.5,
-                    location: "Downtown Market, 123 Main St",
-                    freshness: "FRESH",
-                    category: "vegetables",
-                    quantity: "5 kg",
-                    expiresIn: "2 hours",
-                    status: "available",
-                    photos: [],
-                    phone: "+1234567890",
-                    allergens: ["None"],
-                    dietaryInfo: ["Vegetarian", "Vegan"],
-                    pickupInstructions: "Use back entrance, ask for manager"
-                },
-                {
-                    id: 2,
-                    title: "Cooked Meals - Lunch Special",
-                    description: "Rice, dal, vegetable curry, and chapati. Freshly prepared vegetarian meal",
-                    provider: "University Canteen",
-                    providerRating: 4.5,
-                    distance: 1.2,
-                    location: "Campus Area, Building A",
-                    freshness: "FRESHLY_COOKED",
-                    category: "cooked_meals",
-                    quantity: "20 portions",
-                    expiresIn: "4 hours",
-                    status: "available",
-                    photos: [],
-                    phone: "+1234567891",
-                    allergens: ["Gluten"],
-                    dietaryInfo: ["Vegetarian"],
-                    pickupInstructions: "Main counter, mention ResQMeal"
-                },
-                {
-                    id: 3,
-                    title: "Bakery Items - Bread & Pastries",
-                    description: "Fresh bread loaves, croissants, and assorted pastries from morning batch",
-                    provider: "Local Bakery",
-                    providerRating: 4.3,
-                    distance: 0.8,
-                    location: "Main Street, Shop 45",
-                    freshness: "GOOD",
-                    category: "bakery",
-                    quantity: "15 items",
-                    expiresIn: "6 hours",
-                    status: "urgent",
-                    photos: [],
-                    phone: "+1234567892",
-                    allergens: ["Gluten", "Dairy"],
-                    dietaryInfo: ["Vegetarian"],
-                    pickupInstructions: "Front counter, call before pickup"
-                },
-                {
-                    id: 4,
-                    title: "Dairy Products",
-                    description: "Fresh milk, yogurt, and cheese. All products are within expiry date",
-                    provider: "City Dairy Farm",
-                    providerRating: 4.9,
-                    distance: 2.1,
-                    location: "Farm Road, Sector 7",
-                    freshness: "FRESH",
-                    category: "dairy",
-                    quantity: "3 kg",
-                    expiresIn: "1 day",
-                    status: "available",
-                    photos: [],
-                    phone: "+1234567893",
-                    allergens: ["Dairy"],
-                    dietaryInfo: ["Vegetarian"],
-                    pickupInstructions: "Farm gate, weekdays 9 AM - 5 PM"
-                },
-                {
-                    id: 5,
-                    title: "Surplus Restaurant Food",
-                    description: "Mixed cuisine including rice dishes, grilled items, and salads",
-                    provider: "Downtown Restaurant",
-                    providerRating: 4.6,
-                    distance: 1.5,
-                    location: "Food Court, Level 2",
-                    freshness: "FRESHLY_COOKED",
-                    category: "cooked_meals",
-                    quantity: "30 portions",
-                    expiresIn: "3 hours",
-                    status: "available",
-                    photos: [],
-                    phone: "+1234567894",
-                    allergens: ["Nuts", "Gluten"],
-                    dietaryInfo: ["Mixed"],
-                    pickupInstructions: "Staff entrance, ask for kitchen manager"
-                },
-                {
-                    id: 6,
-                    title: "Seasonal Fruits",
-                    description: "Apples, oranges, bananas - slightly overripe but still good for consumption",
-                    provider: "Fruit Vendor",
-                    providerRating: 4.2,
-                    distance: 0.3,
-                    location: "Street Market, Stall 12",
-                    freshness: "GOOD",
-                    category: "fruits",
-                    quantity: "8 kg",
-                    expiresIn: "8 hours",
-                    status: "available",
-                    photos: [],
-                    phone: "+1234567895",
-                    allergens: ["None"],
-                    dietaryInfo: ["Vegan", "Vegetarian"],
-                    pickupInstructions: "Direct from stall, available till 8 PM"
-                }
-            ];
+    // Fetch listings from API
+    const fetchListings = async () => {
+        try {
+            setLoading(true);
+            
+            const queryParams = new URLSearchParams();
+            if (searchQuery) queryParams.append('search', searchQuery);
+            if (selectedFilters.freshness !== 'all') queryParams.append('freshness', selectedFilters.freshness);
+            if (selectedFilters.locationId !== 'all') queryParams.append('locationId', selectedFilters.locationId);
+            queryParams.append('sortBy', sortBy);
+            queryParams.append('order', 'desc');
 
-            setListings(mockListings);
-            setFilteredListings(mockListings);
+            const response = await fetch(`/api/receiver/listings?${queryParams.toString()}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const formattedListings = data.data.map(listing => ({
+                    id: listing.id,
+                    title: listing.title,
+                    description: listing.description,
+                    provider: listing.provider.displayName,
+                    providerRating: 4.5, // You can add provider ratings to the database later
+                    distance: 1.0, // Calculate based on coordinates later
+                    location: listing.location.name,
+                    freshness: listing.freshness,
+                    category: "general", // You can add categories to the database later
+                    quantity: `${listing.remainingQuantity} ${listing.unit}`,
+                    expiresIn: `${listing.timeRemaining} hours`,
+                    status: listing.priority === 'URGENT' ? 'urgent' : 'available',
+                    photos: listing.photos || [],
+                    phone: listing.provider.phone,
+                    allergens: listing.allergens || [],
+                    dietaryInfo: listing.dietaryInfo || [],
+                    pickupInstructions: listing.pickupInstructions,
+                    originalListing: listing // Keep reference to original data
+                }));
+                
+                setListings(formattedListings);
+                setFilteredListings(formattedListings);
+            } else {
+                console.error('Failed to fetch listings');
+                toast.error('Failed to load listings');
+            }
+        } catch (error) {
+            console.error('Error fetching listings:', error);
+            toast.error('Failed to load listings');
+        } finally {
             setLoading(false);
-        }, 1000);
-    }, []);
+        }
+    };
+
+    useEffect(() => {
+        fetchListings();
+    }, [searchQuery, selectedFilters, sortBy]);
 
     // Filter and search logic
     useEffect(() => {
@@ -217,9 +147,38 @@ const BrowseListings = ({ getStatusBadge }) => {
         setFilteredListings(filtered);
     }, [listings, searchQuery, selectedFilters, sortBy]);
 
-    const handleRequestFood = (listingId) => {
-        toast.success('Food request sent successfully!');
-        // Update the listing or handle request logic
+    const handleRequestFood = async (listingId) => {
+        try {
+            // For browse listings, we'll use a default quantity of 1
+            // In a real app, you might want to open a modal to get the quantity
+            const response = await fetch(`/api/receiver/listings/${listingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestedQuantity: 1,
+                    notes: 'Request from browse listings'
+                })
+            });
+
+            if (response.ok) {
+                toast.success('Food request sent successfully!');
+                // Refresh listings to update availability
+                await fetchListings();
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Failed to send request');
+            }
+        } catch (error) {
+            console.error('Error requesting food:', error);
+            toast.error('Failed to send request');
+        }
+    };
+
+    const handleViewDetails = (listing) => {
+        setSelectedListing(listing);
+        setShowDetailsModal(true);
     };
 
     const getFreshnessColor = (freshness) => {
@@ -467,6 +426,14 @@ const BrowseListings = ({ getStatusBadge }) => {
                                     <Heart className="w-4 h-4 mr-2" />
                                     Request Food
                                 </Button>
+                                <Button 
+                                    variant="outline" 
+                                    className="flex-1"
+                                    onClick={() => handleViewDetails(listing)}
+                                >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Details
+                                </Button>
                                 <Button variant="outline" className="flex-1">
                                     <Navigation className="w-4 h-4 mr-2" />
                                     Get Directions
@@ -505,6 +472,169 @@ const BrowseListings = ({ getStatusBadge }) => {
                         </Button>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Details Modal */}
+            {showDetailsModal && selectedListing && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Listing Details</CardTitle>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowDetailsModal(false)}
+                                >
+                                    ×
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Main Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-900">{selectedListing.title}</h3>
+                                        <p className="text-gray-600 mt-2">{selectedListing.description}</p>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Quantity Available</Label>
+                                            <p className="text-lg font-semibold text-emerald-600">{selectedListing.quantity}</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Freshness</Label>
+                                            <div className="mt-1">
+                                                <Badge className={`px-2 py-1 text-xs border ${getFreshnessColor(selectedListing.freshness)}`}>
+                                                    {selectedListing.freshness.replace('_', ' ')}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <Label className="text-sm font-medium text-gray-600">Expiry</Label>
+                                            <p className={`font-medium ${getUrgencyColor(selectedListing.expiresIn)}`}>
+                                                {selectedListing.expiresIn}
+                                                {parseFloat(selectedListing.expiresIn) <= 2 && (
+                                                    <AlertTriangle className="w-4 h-4 text-red-500 inline ml-1" />
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {/* Provider Info */}
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <Label className="text-sm font-medium text-gray-600">Provider</Label>
+                                        <div className="flex items-center gap-3 mt-2">
+                                            <User className="w-8 h-8 text-gray-600" />
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{selectedListing.provider}</p>
+                                                <div className="flex items-center gap-1">
+                                                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                                    <span className="text-sm text-gray-600">{selectedListing.providerRating}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Location */}
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Location</Label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <MapPin className="w-4 h-4 text-gray-600" />
+                                            <span className="text-gray-900">{selectedListing.location}</span>
+                                        </div>
+                                        <p className="text-sm text-emerald-600 font-medium mt-1">
+                                            {selectedListing.distance} km away
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Photos */}
+                            {selectedListing.photos && selectedListing.photos.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-600">Photos</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                                        {selectedListing.photos.map((photo, index) => (
+                                            <img
+                                                key={index}
+                                                src={photo}
+                                                alt={`Food photo ${index + 1}`}
+                                                className="w-full h-32 object-cover rounded-lg border"
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Dietary Information */}
+                            {selectedListing.dietaryInfo && selectedListing.dietaryInfo.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-600">Dietary Information</Label>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {selectedListing.dietaryInfo.map((info, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs">
+                                                {info}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Allergens */}
+                            {selectedListing.allergens && selectedListing.allergens.length > 0 && (
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-600">Allergens</Label>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {selectedListing.allergens.map((allergen, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs text-red-600 border-red-200">
+                                                {allergen}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Pickup Instructions */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <Label className="text-sm font-medium text-blue-800">Pickup Instructions</Label>
+                                <p className="text-blue-700 mt-1">{selectedListing.pickupInstructions}</p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                                <Button 
+                                    onClick={() => {
+                                        handleRequestFood(selectedListing.id);
+                                        setShowDetailsModal(false);
+                                    }}
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                    <Heart className="w-4 h-4 mr-2" />
+                                    Request This Food
+                                </Button>
+                                <Button variant="outline" className="flex-1">
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    Call Provider
+                                </Button>
+                                <Button variant="outline" className="flex-1">
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Message
+                                </Button>
+                                <Button variant="outline" className="flex-1">
+                                    <Navigation className="w-4 h-4 mr-2" />
+                                    Directions
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
         </div>
     );

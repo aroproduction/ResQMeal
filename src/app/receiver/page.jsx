@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { signOut } from "next-auth/react";
 
 import {
+    LayoutDashboard,
     Search,
     MapPin,
     Clock,
@@ -38,7 +39,7 @@ const ReceiverDashboard = () => {
     ]);
 
     const menuItems = [
-        { id: "dashboard", label: "Dashboard", icon: Leaf },
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
         { id: "browse", label: "Browse Food", icon: Search },
         { id: "requests", label: "My Requests", icon: Clock },
         { id: "map", label: "Map View", icon: MapPin },

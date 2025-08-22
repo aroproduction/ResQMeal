@@ -147,6 +147,11 @@ export const convertToKg = (quantity, unit) => {
         'bowl': 0.3
     };
 
+    // Handle null/undefined unit
+    if (!unit || typeof unit !== 'string') {
+        return quantity * 0.1; // Default to 100g
+    }
+
     const rate = conversionRates[unit.toLowerCase()] || 0.1; // Default to 100g
     return quantity * rate;
 };
@@ -154,9 +159,18 @@ export const convertToKg = (quantity, unit) => {
 /**
  * Calculate CO2 reduction based on food type and quantity
  */
-export const calculateCO2Reduction = (foodItems, totalQuantity, unit) => {
+export const calculateCO2Reduction = (foodItemsOrQuantity, totalQuantity, unit) => {
     try {
         let totalCO2Saved = 0;
+        
+        // Handle single parameter case (just quantity in kg)
+        if (arguments.length === 1 && typeof foodItemsOrQuantity === 'number') {
+            const quantityInKg = foodItemsOrQuantity;
+            return Math.round(quantityInKg * CO2_EMISSION_FACTORS.default * 100) / 100;
+        }
+
+        // Handle three parameter case
+        const foodItems = foodItemsOrQuantity;
         const quantityInKg = convertToKg(totalQuantity, unit);
 
         if (Array.isArray(foodItems) && foodItems.length > 0) {
@@ -186,18 +200,32 @@ export const calculateCO2Reduction = (foodItems, totalQuantity, unit) => {
         return Math.round(totalCO2Saved * 100) / 100; // Round to 2 decimal places
     } catch (error) {
         console.error('Error calculating CO2 reduction:', error);
-        // Fallback calculation
-        const quantityInKg = convertToKg(totalQuantity, unit);
-        return Math.round(quantityInKg * CO2_EMISSION_FACTORS.default * 100) / 100;
+        // Fallback calculation - handle both single param and multi param cases
+        if (arguments.length === 1 && typeof foodItemsOrQuantity === 'number') {
+            const quantityInKg = foodItemsOrQuantity;
+            return Math.round(quantityInKg * CO2_EMISSION_FACTORS.default * 100) / 100;
+        } else {
+            const quantityInKg = convertToKg(totalQuantity || 0, unit || 'kg');
+            return Math.round(quantityInKg * CO2_EMISSION_FACTORS.default * 100) / 100;
+        }
     }
 };
 
 /**
  * Calculate water footprint saved
  */
-export const calculateWaterSaved = (foodItems, totalQuantity, unit) => {
+export const calculateWaterSaved = (foodItemsOrQuantity, totalQuantity, unit) => {
     try {
         let totalWaterSaved = 0;
+        
+        // Handle single parameter case (just quantity in kg)
+        if (arguments.length === 1 && typeof foodItemsOrQuantity === 'number') {
+            const quantityInKg = foodItemsOrQuantity;
+            return Math.round(quantityInKg * WATER_USAGE_FACTORS.default * 100) / 100;
+        }
+
+        // Handle three parameter case
+        const foodItems = foodItemsOrQuantity;
         const quantityInKg = convertToKg(totalQuantity, unit);
 
         if (Array.isArray(foodItems) && foodItems.length > 0) {
@@ -236,7 +264,8 @@ export const calculateWaterSaved = (foodItems, totalQuantity, unit) => {
  * Calculate number of people that can be served
  * Assumes average serving size of 250g per person
  */
-export const calculatePeopleServed = (totalQuantity, unit) => {
+export const calculatePeopleServed = (totalQuantity, unit = 'kg') => {
+    if (!totalQuantity) return 0;
     const quantityInKg = convertToKg(totalQuantity, unit);
     const servingSizeKg = 0.25; // 250g per serving
     return Math.floor(quantityInKg / servingSizeKg);
@@ -245,7 +274,14 @@ export const calculatePeopleServed = (totalQuantity, unit) => {
 /**
  * Get a formatted environmental impact summary
  */
-export const getEnvironmentalImpactSummary = (foodItems, totalQuantity, unit) => {
+export const getEnvironmentalImpactSummary = (foodItems, totalQuantity, unit = 'kg') => {
+    // Handle case where function is called with only one parameter (quantity)
+    if (arguments.length === 1 && typeof foodItems === 'number') {
+        totalQuantity = foodItems;
+        foodItems = null;
+        unit = 'kg';
+    }
+    
     const co2Reduced = calculateCO2Reduction(foodItems, totalQuantity, unit);
     const waterSaved = calculateWaterSaved(foodItems, totalQuantity, unit);
     const peopleServed = calculatePeopleServed(totalQuantity, unit);

@@ -67,36 +67,57 @@ const Profile = () => {
         lastActive: ""
     });
 
-    // Mock data
+    // Fetch profile data from API
+    const fetchProfile = async () => {
+        try {
+            const response = await fetch('/api/receiver/profile');
+            if (response.ok) {
+                const data = await response.json();
+                const profile = data.data;
+                
+                setProfileData({
+                    name: profile.name || "",
+                    email: profile.email || "",
+                    phone: profile.phone || "",
+                    organizationType: "Receiver", // Default for receiver role
+                    address: profile.profile?.campus?.address ? 
+                        `${profile.profile.campus.name}, ${JSON.stringify(profile.profile.campus.address)}` : "",
+                    description: profile.profile?.bio || "",
+                    servingCapacity: "", // Not applicable for receivers
+                    operatingHours: "", // Not applicable for receivers
+                    dietaryPreferences: profile.profile?.preferences?.dietaryRestrictions || [],
+                    allergens: profile.profile?.preferences?.allergens || [],
+                    contactPerson: profile.name || "",
+                    establishedDate: new Date(profile.createdAt).toLocaleDateString(),
+                    avatar: profile.profile?.avatar || null,
+                    studentId: profile.profile?.studentId || "",
+                    employeeId: profile.profile?.employeeId || "",
+                    department: profile.profile?.department || ""
+                });
+
+                // Set stats from analytics
+                const analytics = profile.analytics;
+                setStats({
+                    totalRequests: analytics?.claimsMade || 0,
+                    mealsReceived: Math.round(analytics?.foodReceived || 0),
+                    favoriteProviders: 0, // Could be implemented later
+                    rating: 4.5, // Default or fetch from feedback
+                    impactScore: analytics?.sustainabilityScore || 0,
+                    joinDate: new Date(profile.createdAt).toLocaleDateString(),
+                    lastActive: "Recently" // Could track login times
+                });
+            } else {
+                console.error('Failed to fetch profile');
+                toast.error('Failed to load profile');
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            toast.error('Failed to load profile');
+        }
+    };
+
     useEffect(() => {
-        const mockProfile = {
-            name: "Community Kitchen NGO",
-            email: "contact@communitykitchen.org",
-            phone: "+1234567890",
-            organizationType: "NGO",
-            address: "123 Charity Street, Social Sector, City",
-            description: "We serve underprivileged communities with free meals and food distribution programs.",
-            servingCapacity: "200 meals per day",
-            operatingHours: "6:00 AM - 10:00 PM",
-            dietaryPreferences: ["Vegetarian", "Halal"],
-            allergens: ["Nuts", "Gluten"],
-            contactPerson: "Sarah Johnson",
-            establishedDate: "2020-01-15",
-            avatar: null
-        };
-
-        const mockStats = {
-            totalRequests: 45,
-            mealsReceived: 180,
-            favoriteProviders: 8,
-            rating: 4.7,
-            impactScore: 950,
-            joinDate: "2023-06-15",
-            lastActive: "2024-01-15"
-        };
-
-        setProfileData(mockProfile);
-        setStats(mockStats);
+        fetchProfile();
     }, []);
 
     const dietaryOptions = [
@@ -112,10 +133,39 @@ const Profile = () => {
         "Food Bank", "Shelter", "School", "Healthcare Facility", "Other"
     ];
 
-    const handleSave = () => {
-        // Save profile data
-        setIsEditing(false);
-        toast.success('Profile updated successfully!');
+    const handleSave = async () => {
+        try {
+            const response = await fetch('/api/receiver/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: profileData.name,
+                    phone: profileData.phone,
+                    bio: profileData.description,
+                    department: profileData.department,
+                    studentId: profileData.studentId,
+                    employeeId: profileData.employeeId,
+                    preferences: {
+                        dietaryRestrictions: profileData.dietaryPreferences,
+                        allergens: profileData.allergens
+                    }
+                })
+            });
+
+            if (response.ok) {
+                setIsEditing(false);
+                toast.success('Profile updated successfully!');
+                await fetchProfile(); // Refresh the profile data
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            toast.error('Failed to update profile');
+        }
     };
 
     const handleCancel = () => {
