@@ -38,111 +38,65 @@ const MyRequests = ({ getStatusBadge }) => {
     const [rating, setRating] = useState(0);
     const [feedback, setFeedback] = useState("");
 
-    // Mock data
-    useEffect(() => {
-        setTimeout(() => {
-            const mockRequests = [
-                {
-                    id: 1,
-                    listingTitle: "Fresh Bread & Pastries",
-                    provider: "Artisan Bakery",
-                    providerRating: 4.8,
-                    requestedAt: "2024-01-15T14:30:00Z",
-                    status: "confirmed",
-                    pickupTime: "2024-01-15T16:00:00Z",
-                    pickupLocation: "Main Street, Shop 45",
-                    otp: "1234",
-                    requestedQuantity: "5 items",
-                    providerPhone: "+1234567890",
-                    notes: "Please call when you arrive",
-                    expiresAt: "2024-01-15T18:00:00Z",
-                    distance: "0.8 km",
-                    category: "bakery"
-                },
-                {
-                    id: 2,
-                    listingTitle: "Surplus Vegetables",
-                    provider: "Farm Market",
-                    providerRating: 4.5,
-                    requestedAt: "2024-01-14T10:15:00Z",
-                    status: "pending",
-                    pickupTime: "Pending confirmation",
-                    pickupLocation: "Downtown Market, Stall 12",
-                    otp: null,
-                    requestedQuantity: "3 kg",
-                    providerPhone: "+1234567891",
-                    notes: "Need vegetables for community kitchen",
-                    expiresAt: "2024-01-14T20:00:00Z",
-                    distance: "1.2 km",
-                    category: "vegetables"
-                },
-                {
-                    id: 3,
-                    listingTitle: "University Canteen Meals",
-                    provider: "University Canteen",
-                    providerRating: 4.3,
-                    requestedAt: "2024-01-13T12:00:00Z",
-                    status: "completed",
-                    pickupTime: "2024-01-13T14:00:00Z",
-                    pickupLocation: "Campus Area, Building A",
-                    otp: "5678",
-                    requestedQuantity: "10 portions",
-                    providerPhone: "+1234567892",
-                    notes: "Collected successfully",
-                    expiresAt: "2024-01-13T18:00:00Z",
-                    distance: "2.1 km",
-                    category: "cooked_meals",
-                    rating: 5,
-                    feedback: "Excellent food quality and quick response!"
-                },
-                {
-                    id: 4,
-                    listingTitle: "Dairy Products",
-                    provider: "City Dairy Farm",
-                    providerRating: 4.9,
-                    requestedAt: "2024-01-12T09:30:00Z",
-                    status: "cancelled",
-                    pickupTime: "2024-01-12T15:00:00Z",
-                    pickupLocation: "Farm Road, Sector 7",
-                    otp: null,
-                    requestedQuantity: "2 kg",
-                    providerPhone: "+1234567893",
-                    notes: "Provider had to cancel due to quality concerns",
-                    expiresAt: "2024-01-13T09:30:00Z",
-                    distance: "3.5 km",
-                    category: "dairy"
-                },
-                {
-                    id: 5,
-                    listingTitle: "Restaurant Surplus",
-                    provider: "Downtown Restaurant",
-                    providerRating: 4.6,
-                    requestedAt: "2024-01-11T19:00:00Z",
-                    status: "expired",
-                    pickupTime: "2024-01-11T21:00:00Z",
-                    pickupLocation: "Food Court, Level 2",
-                    otp: "9012",
-                    requestedQuantity: "8 portions",
-                    providerPhone: "+1234567894",
-                    notes: "Could not pickup on time",
-                    expiresAt: "2024-01-11T22:00:00Z",
-                    distance: "1.8 km",
-                    category: "cooked_meals"
-                }
-            ];
+    // Fetch requests from API
+    const fetchRequests = async () => {
+        try {
+            setLoading(true);
+            
+            let endpoint = '/api/receiver/claims';
+            if (activeTab !== 'all') {
+                endpoint += `?status=${activeTab.toUpperCase()}`;
+            }
 
-            setRequests(mockRequests);
-            setFilteredRequests(mockRequests);
+            const response = await fetch(endpoint);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const formattedRequests = data.data.map(claim => ({
+                    id: claim.id,
+                    listingTitle: claim.listing.title,
+                    provider: claim.listing.provider.displayName,
+                    providerRating: 4.5, // Add to database later
+                    requestedAt: claim.createdAt,
+                    status: claim.status.toLowerCase(),
+                    pickupTime: claim.pickupTime || "Pending confirmation",
+                    pickupLocation: claim.listing.location.name,
+                    otp: claim.pickupCode || null,
+                    requestedQuantity: `${claim.requestedQuantity} ${claim.listing.unit}`,
+                    approvedQuantity: claim.approvedQuantity ? `${claim.approvedQuantity} ${claim.listing.unit}` : null,
+                    providerPhone: claim.listing.provider.phone,
+                    notes: claim.notes,
+                    expiresAt: claim.listing.safeUntil,
+                    distance: "Calculating...", // Calculate based on coordinates later
+                    category: "general", // Add to database later
+                    timeAgo: claim.timeAgo,
+                    originalClaim: claim // Keep reference to original data
+                }));
+                
+                setRequests(formattedRequests);
+            } else {
+                console.error('Failed to fetch requests');
+                toast.error('Failed to load requests');
+            }
+        } catch (error) {
+            console.error('Error fetching requests:', error);
+            toast.error('Failed to load requests');
+        } finally {
             setLoading(false);
-        }, 1000);
-    }, []);
+        }
+    };
 
-    // Filter requests based on active tab and search
+    useEffect(() => {
+        fetchRequests();
+    }, [activeTab]);
+
+    // Filter requests based on search
     useEffect(() => {
         let filtered = [...requests];
 
-        // Filter by tab
-        if (activeTab !== "all") {
+        // Filter by tab (already handled in API call)
+        // Search filter
+        if (searchQuery) {
             filtered = filtered.filter(request => request.status === activeTab);
         }
 
@@ -170,12 +124,50 @@ const MyRequests = ({ getStatusBadge }) => {
         toast.success('OTP copied to clipboard!');
     };
 
-    const handleSubmitRating = () => {
-        // Submit rating and feedback
-        toast.success('Rating submitted successfully!');
-        setShowRatingModal(false);
-        setRating(0);
-        setFeedback("");
+    const handleSubmitRating = async () => {
+        try {
+            if (!selectedRequest || rating === 0) {
+                toast.error('Please provide a rating');
+                return;
+            }
+
+            const response = await fetch('/api/receiver/claims/complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    claimId: selectedRequest.id,
+                    feedback: {
+                        rating: rating,
+                        comment: feedback,
+                        foodQuality: rating, // Using same rating for simplicity
+                        experience: rating
+                    }
+                })
+            });
+
+            if (response.ok) {
+                toast.success('Rating submitted successfully!');
+                await fetchRequests(); // Refresh the list
+            } else {
+                const errorData = await response.json();
+                toast.error(errorData.error || 'Failed to submit rating');
+            }
+        } catch (error) {
+            console.error('Error submitting rating:', error);
+            toast.error('Failed to submit rating');
+        } finally {
+            setShowRatingModal(false);
+            setRating(0);
+            setFeedback("");
+            setSelectedRequest(null);
+        }
+    };
+
+    const handleViewDetails = (request) => {
+        setSelectedRequest(request);
+        setShowDetailsModal(true);
     };
 
     const formatDate = (dateString) => {
@@ -433,7 +425,7 @@ const MyRequests = ({ getStatusBadge }) => {
                                         </Button>
                                     )}
 
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
                                         <Eye className="w-4 h-4 mr-2" />
                                         View Details
                                     </Button>
@@ -461,6 +453,125 @@ const MyRequests = ({ getStatusBadge }) => {
                         </Button>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Details Modal */}
+            {showDetailsModal && selectedRequest && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>Request Details</CardTitle>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowDetailsModal(false)}
+                                >
+                                    ×
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Request Status */}
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-lg">{selectedRequest.title}</h3>
+                                <Badge className={`px-3 py-1 ${getStatusColor(selectedRequest.status)}`}>
+                                    {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
+                                </Badge>
+                            </div>
+
+                            {/* Request Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Requested Quantity</Label>
+                                        <p className="text-lg font-semibold">{selectedRequest.requestedQuantity}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Provider</Label>
+                                        <p className="font-medium">{selectedRequest.provider}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Location</Label>
+                                        <p className="flex items-center gap-1">
+                                            <MapPin className="w-4 h-4" />
+                                            {selectedRequest.location}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Request Date</Label>
+                                        <p>{formatDate(selectedRequest.requestDate)}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Expected Pickup</Label>
+                                        <p>{selectedRequest.expectedPickupTime}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-600">Distance</Label>
+                                        <p>{selectedRequest.distance}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <Label className="text-sm font-medium text-gray-600">Description</Label>
+                                <p className="mt-1 text-gray-700">{selectedRequest.description}</p>
+                            </div>
+
+                            {/* Notes */}
+                            {selectedRequest.notes && (
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-600">Notes</Label>
+                                    <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedRequest.notes}</p>
+                                </div>
+                            )}
+
+                            {/* OTP Section for confirmed requests */}
+                            {selectedRequest.status === 'confirmed' && selectedRequest.originalClaim?.pickupCode && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <Label className="text-sm font-medium text-green-800">Pickup OTP</Label>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <p className="text-2xl font-bold text-green-700 font-mono tracking-wider">
+                                            {selectedRequest.originalClaim.pickupCode}
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(selectedRequest.originalClaim.pickupCode);
+                                                toast.success('OTP copied to clipboard!');
+                                            }}
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-xs text-green-600 mt-1">
+                                        Share this OTP with the provider during pickup
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Contact Actions */}
+                            <div className="flex gap-2 pt-4 border-t">
+                                <Button variant="outline" className="flex-1">
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    Call Provider
+                                </Button>
+                                <Button variant="outline" className="flex-1">
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Message
+                                </Button>
+                                <Button variant="outline" className="flex-1">
+                                    <Navigation className="w-4 h-4 mr-2" />
+                                    Directions
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Rating Modal */}

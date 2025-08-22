@@ -12,7 +12,7 @@ export async function PATCH(request, { params }) {
         }
 
         const providerId = session.user.id;
-        const listingId = params.id;
+        const listingId = (await params).id;
         const { status } = await request.json();
 
         if (!status) {
@@ -43,7 +43,7 @@ export async function DELETE(request, { params }) {
         }
 
         const providerId = session.user.id;
-        const listingId = params.id;
+        const listingId = (await params).id;
 
         await deleteListing(listingId, providerId);
 
